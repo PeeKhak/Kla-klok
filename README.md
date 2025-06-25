@@ -1,2 +1,292 @@
 # Kla-klok
 free Jam play
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thai Fish Prawn Crab</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-image: url('https://images.unsplash.com/photo-1520769669658-794e37d98d03?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .game-container {
+            background-color: rgba(255, 245, 245, 0.9);
+            border: 5px solid #ffb6c1;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 0 15px rgba(255, 182, 193, 0.5);
+            max-width: 500px;
+        }
+        .reels {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .reel {
+            width: 100px;
+            height: 100px;
+            background-color: #fffafa;
+            border: 2px solid #ff69b4;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: bold;
+        }
+        .betting-area {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .bet-option {
+            padding: 10px;
+            background-color: #ffe4e1;
+            border: 1px solid #ff69b4;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 18px;
+        }
+        .bet-option.selected {
+            background-color: #ff69b4;
+            color: white;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 5px;
+            cursor: pointer;
+            background-color: #ff69b4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #ff1493;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #d81b60;
+        }
+        #balance {
+            margin-top: 10px;
+            font-size: 16px;
+            color: #ad1457;
+        }
+        h1 {
+            color: #c2185b;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Thai Fish Prawn Crab</h1>
+        <div class="reels">
+            <div class="reel" id="reel1">?</div>
+            <div class="reel" id="reel2">?</div>
+            <div class="reel" id="reel3">?</div>
+        </div>
+        <div class="betting-area" id="bettingArea">
+            <div class="bet-option" data-symbol="🐟">Fish</div>
+            <div class="bet-option" data-symbol="🦐">Prawn</div>
+            <div class="bet-option" data-symbol="🦀">Crab</div>
+            <div class="bet-option" data-symbol="🍈">Gourd</div>
+            <div class="bet-option" data-symbol="🐔">Chicken</div>
+            <div class="bet-option" data-symbol="🐅">Tiger</div>
+        </div>
+        <button id="spinButton">Spin (10 Coins)</button>
+        <button id="playTenButton">Play 10 Times</button>
+        <div id="balance">Balance: 100 Coins</div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        console.log('Script started');
+        const symbols = ['🐟', '🦐', '🦀', '🍈', '🐔', '🐅'];
+        const reels = [
+            document.getElementById('reel1'),
+            document.getElementById('reel2'),
+            document.getElementById('reel3')
+        ];
+        const spinButton = document.getElementById('spinButton');
+        const playTenButton = document.getElementById('playTenButton');
+        const bettingArea = document.getElementById('bettingArea');
+        const balanceDisplay = document.getElementById('balance');
+        const resultDisplay = document.getElementById('result');
+        let balance = 100;
+        let isSpinning = false;
+        let selectedBets = [];
+
+        // Check for missing DOM elements
+        if (!reels.every(reel => reel) || !spinButton || !playTenButton || !bettingArea) {
+            console.error('DOM elements not found:', { reels, spinButton, playTenButton, bettingArea });
+            resultDisplay.textContent = 'Error: Game elements not loaded properly.';
+            if (spinButton) spinButton.disabled = true;
+            if (playTenButton) playTenButton.disabled = true;
+        } else {
+            console.log('DOM elements loaded successfully');
+
+            // Initialize betting options
+            const betOptions = bettingArea.querySelectorAll('.bet-option');
+            betOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    if (isSpinning) return;
+                    option.classList.toggle('selected');
+                    const symbol = option.getAttribute('data-symbol');
+                    if (option.classList.contains('selected')) {
+                        if (selectedBets.length < 2) {
+                            selectedBets.push(symbol);
+                            console.log('Bet added:', selectedBets);
+                        } else {
+                            option.classList.remove('selected');
+                            resultDisplay.textContent = 'Max 2 bets allowed!';
+                        }
+                    } else {
+                        selectedBets = selectedBets.filter(bet => bet !== symbol);
+                        console.log('Bet removed:', selectedBets);
+                    }
+                });
+            });
+
+            // Spin the reels
+            function spin() {
+                if (isSpinning) {
+                    console.log('Spin blocked: Already spinning');
+                    return;
+                }
+                if (balance < 10) {
+                    resultDisplay.textContent = 'Insufficient balance!';
+                    console.log('Spin blocked: Insufficient balance', balance);
+                    return;
+                }
+                if (selectedBets.length === 0) {
+                    resultDisplay.textContent = 'Please select at least one bet!';
+                    console.log('Spin blocked: No bets selected');
+                    return;
+                }
+
+                isSpinning = true;
+                spinButton.disabled = true;
+                playTenButton.disabled = true;
+                balance -= 10;
+                balanceDisplay.textContent = `Balance: ${balance} Coins`;
+                resultDisplay.textContent = '';
+                console.log('Spinning with bets:', selectedBets);
+
+                // Animate reels
+                let spins = 20;
+                let spinInterval = setInterval(() => {
+                    reels.forEach(reel => {
+                        reel.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+                    });
+                    spins--;
+                    if (spins <= 0) {
+                        clearInterval(spinInterval);
+                        checkWin();
+                        isSpinning = false;
+                        spinButton.disabled = balance < 10;
+                        playTenButton.disabled = balance < 100;
+                        console.log('Spin complete, balance:', balance);
+                    }
+                }, 100);
+            }
+
+            // Check for winning combinations
+            function checkWin() {
+                const result = reels.map(reel => reel.textContent);
+                let message = '';
+                let winnings = 0;
+
+                console.log('Reel results:', result);
+
+                if (selectedBets.length === 1) {
+                    const bet = selectedBets[0];
+                    const matches = result.filter(symbol => symbol === bet).length;
+                    if (matches === 1) {
+                        winnings = 10; // 1:1 payout
+                        message = `You won ${winnings} coins! (1 match)`;
+                    } else if (matches === 2) {
+                        winnings = 20; // 2:1 payout
+                        message = `You won ${winnings} coins! (2 matches)`;
+                    } else if (matches === 3) {
+                        winnings = 30; // 3:1 payout
+                        message = `Jackpot! You won ${winnings} coins! (3 matches)`;
+                    } else {
+                        message = 'No matches, try again!';
+                    }
+                } else if (selectedBets.length === 2) {
+                    const bothPresent = selectedBets.every(bet => result.includes(bet));
+                    if (bothPresent) {
+                        winnings = 50; // 5:1 payout for combo bet
+                        message = `Combo win! You won ${winnings} coins!`;
+                    } else {
+                        message = 'No combo match, try again!';
+                    }
+                }
+
+                balance += winnings;
+                balanceDisplay.textContent = `Balance: ${balance} Coins`;
+                resultDisplay.textContent = message;
+                console.log('Win check complete:', { winnings, message });
+            }
+
+            // Play 10 times automatically
+            async function playTenTimes() {
+                if (balance < 100) {
+                    resultDisplay.textContent = 'Need at least 100 coins to play 10 times!';
+                    console.log('Play 10 blocked: Insufficient balance', balance);
+                    return;
+                }
+                if (selectedBets.length === 0) {
+                    resultDisplay.textContent = 'Please select at least one bet!';
+                    console.log('Play 10 blocked: No bets selected');
+                    return;
+                }
+
+                console.log('Starting 10 plays with bets:', selectedBets);
+                for (let i = 0; i < 10; i++) {
+                    if (balance < 10) {
+                        resultDisplay.textContent = 'Stopped: Insufficient balance!';
+                        console.log('Play 10 stopped: Insufficient balance at play', i + 1);
+                        break;
+                    }
+                    spin();
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+                console.log('10 plays completed');
+            }
+
+            // Event listeners
+            spinButton.addEventListener('click', spin);
+            playTenButton.addEventListener('click', playTenTimes);
+
+            // Initial button state
+            playTenButton.disabled = balance < 100;
+            console.log('Initial setup complete, balance:', balance);
+        }
+    </script>
+</body>
+</html>
